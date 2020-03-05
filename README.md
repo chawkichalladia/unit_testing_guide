@@ -221,7 +221,7 @@ describe("test todo store", () => {
 });
 ```
 
-with cleanup is an api used to unmount any rendered hooks.
+where cleanup is an api used to unmount any rendered hooks.
 
 now to writing the test it self.
 
