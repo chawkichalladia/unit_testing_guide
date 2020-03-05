@@ -223,7 +223,7 @@ describe("test todo store", () => {
 
 where cleanup is an api used to unmount any rendered hooks.
 
-now to writing the test it self.
+now to writing the test itself.
 
 first step is to type the mocks:
 
