@@ -1,0 +1,8 @@
+{
+  "no-inline-html": {
+    "allowed_elements": ["center", "br"]
+  },
+  "line-length": {
+      "line_length": 80
+  }
+}
