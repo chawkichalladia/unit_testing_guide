@@ -202,8 +202,9 @@ describe("test todo store", () => {
 });
 ```
 
-the change introduced in this test is that the store is a hook, so we need to use
-the `@testing-library/react-hooks` testing library to do our tests.
+the difference between this test and the previous test is that in this case the 
+store is a react hook, so we need to use the `@testing-library/react-hooks` 
+testing library to do our tests.
 
 so our setup would look like this in the test file:
 
