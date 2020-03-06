@@ -32,7 +32,7 @@ jest.mock("../helpers/urlHelpers");
 
 ### _b - adding the afterEach hook to clear the mocks_
 
-In order to avoid interference between different tests, mocks should be cleared
+to avoid interference between different tests, mocks should be cleared
 after each one.
 
 ```typescript
@@ -202,8 +202,8 @@ describe("test todo store", () => {
 });
 ```
 
-the difference between this test and the previous test is that in this case the 
-store is a react hook, so we need to use the `@testing-library/react-hooks` 
+the difference between this test and the previous test is that in this case the
+store is a react hook, so we need to use the `@testing-library/react-hooks`
 testing library to do our tests.
 
 so our setup would look like this in the test file:
@@ -221,7 +221,7 @@ describe("test todo store", () => {
 });
 ```
 
-where cleanup is an api used to unmount any rendered hooks.
+where cleanup is an API used to unmount any rendered hooks.
 
 now to writing the test itself.
 
@@ -231,7 +231,7 @@ first step is to type the mocks:
 const MockTodoService = todoService as jest.Mocked<typeof todoService>;
 ```
 
-then we mock the returned value. to mock the value i use a helper function that
+then we mock the returned value. to mock the value we use a helper function that
 returns data in the expected form from the service.
 
 ```typescript
@@ -260,7 +260,7 @@ then we call the action we want to test:
 await act(async () => await result.current.getTodos());
 ```
 
-since the action we are calling is a state action, we need to wrap our call in an
+the action we are calling is a state action, so we need to wrap our call in an
 act closure which will wait for those state changes before returning the result
 we need.
 
@@ -277,13 +277,13 @@ expect(result.current.total).toBe(todos.total);
 expect(result.current.todos).toEqual(todos.todos);
 ```
 
-first we start by asserting that the mocked service function have been called correctly,
+first, we start by asserting that the mocked service function has been called correctly,
 then we assert that the state values are what we expect them to be.
 
-in this case we are expecting that the service function will be called a single time,
-and will receive 2 functions are arguments.
+in this case, we are expecting that the service function will be called a single
+time, and will receive 2 functions are arguments.
 
-on the other hand we are expecting that the values saved to the store would match
+on the other hand, we are expecting that the values saved to the store would match
 the values passed to the service mock.
 
 at the end, this how the complete test would look like:
@@ -329,3 +329,210 @@ describe("test todo store", () => {
   });
 });
 ```
+
+<br />
+
+## **3 - Testing React View component**
+
+### a - testing a simple component
+
+simple components are components that do not use other components in their structure.
+
+an example of a simple component is this `HeaderView` component:
+
+```typescript
+import React from "react";
+import Styles from "../../Styles";
+import { PageHeader, Typography } from "antd";
+import { HeaderViewProps } from "../../models/component-props/HeaderProps";
+
+const HeaderView: React.FC<HeaderViewProps> = ({ count }) => {
+  return (
+    <PageHeader
+      title={
+        <Typography.Title type="secondary" style={Styles.HeaderTitle}>
+          Todos
+        </Typography.Title>
+      }
+      style={Styles.Header}
+      extra={
+        <div style={Styles.Counter}>
+          <span>pending({count})</span>
+        </div>
+      }
+    />
+  );
+};
+
+export default HeaderView;
+```
+
+the way to test this simple component is to to simply render it then verify what
+was rendered. this component can be tested in 2 ways:
+
+- using snapshot testing:
+
+```typescript
+import React from "react";
+import { render } from "@testing-library/react";
+import HeaderView from "../../components/views/HeaderView";
+
+it("snapshot test", () => {
+  const { baseElement } = render(<HeaderView count={countProp} />);
+
+  expect(baseElement).toMatchSnapshot();
+});
+```
+
+this creates a snapshot file for this test suite that
+contains the snapshots created by each of the tests.
+
+- using react testing library
+
+if you already know what to expect from your component
+you can simply assert that the expected content
+is being rendered correctly, which takes us to the second
+way of testing react components:
+
+```typescript
+import React from "react";
+import { render } from "@testing-library/react";
+import HeaderView from "../../components/views/HeaderView";
+
+describe("Name of the group", () => {
+  const countProp = 200;
+  it("it displays the correct text", () => {
+    const { getByText } = render(<HeaderView count={countProp} />);
+
+    const pending = getByText(/^pending/i);
+
+    expect(pending).toHaveTextContent(`pending(${countProp})`);
+  });
+});
+```
+
+here we render the component then we assert that it
+displays the text correctly given certain props.
+this wa we can assert that what we want is being rendered
+without the need to go through a snapshot file that can
+be long and complex depending on the components used
+with the one we are currently testing.
+
+### a - testing a composite component
+
+composite components are components that are built using
+other components (both simple and composite) to build
+the structure needed.
+
+an example of a composite component is `TodoFormView`:
+
+```typescript
+import React from "react";
+import { Form, Input, Icon, Checkbox, Button, Divider } from "antd";
+import FormInput from "../generic/FormInput";
+import Styles from "../../Styles";
+import { TodoFormViewProps } from "../../models/component-props/TodoFormProps";
+
+const TodoFormView: React.FC<TodoFormViewProps> = ({
+  warning,
+  title,
+  status,
+  submitForm,
+  onBlurInput,
+  onInput,
+  onCheckBox
+}) => {
+  // form layout config
+  const formLayout = {
+    wrapperCol: {
+      xs: { span: 25, offset: 0 },
+      sm: { span: 24, offset: 0 }
+    }
+  };
+
+  return (
+    <Form
+      layout="inline"
+      {...formLayout}
+      onSubmit={submitForm}
+      style={Styles.Form}
+      data-testid="new-todo-form"
+    >
+      <div style={Styles.FormBody}>
+        <FormInput warning={warning} style={Styles.InputContainer}>
+          <Input
+            suffix={<Icon type="alert" />}
+            placeholder="Add a Todo"
+            style={Styles.Input}
+            value={title}
+            onChange={onInput}
+            onBlur={onBlurInput}
+          />
+        </FormInput>
+        <Form.Item>
+          <Checkbox
+            checked={status}
+            style={Styles.CheckBox}
+            onChange={onCheckBox}
+            data-testid="new-todo-status"
+            value={status}
+          />
+        </Form.Item>
+        <Form.Item>
+          <Button
+            style={Styles.Button}
+            icon="save"
+            htmlType="submit"
+            data-testid="save-todo"
+          >
+            Save Todo
+          </Button>
+        </Form.Item>
+      </div>
+      <Divider style={Styles.Divider} data-testid="divider" />
+    </Form>
+  );
+};
+
+export default TodoFormView;
+```
+
+this component uses the `FormInput` component as a building block for its
+structure.
+
+testing this component can be done using one of 2 methods:
+snapshot testing or using `react testing library`.
+
+to test this component, no matter which method we are
+going to use, we will need to mock the `Forminput` component that is being imported.
+react testing library
+
+- using snapshot test
+
+```typescript
+import React from "react";
+import { render } from "@testing-library/react";
+import TodoFormView from "../../components/views/TodoFormView";
+
+jest.mock("../../components/generic/FormInput", () => "MockFormInput");
+
+it("snapshot", () => {
+  const { baseElement } = render(
+    <TodoFormView
+      status={false}
+      submitForm={jest.fn()}
+      warning={false}
+      onBlurInput={jest.fn()}
+      onCheckBox={jest.fn()}
+      onInput={jest.fn()}
+      title="title"
+    />
+  );
+
+  expect(baseElement).toMatchSnapshot();
+});
+```
+
+in this test we just assign a new name to the mock
+
+- using react testing library
