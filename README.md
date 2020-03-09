@@ -821,3 +821,75 @@ value for the `title` prop.
 finally we assert that the `console.trace` method have
 not been called as a precaution for any unwanted side
 effects.
+
+finally the test file would look like this:
+
+```typescript
+import React from "react";
+import { render, act, RenderResult } from "@testing-library/react";
+import TodoForm from "../../components/TodoForm";
+import * as useTodoStore from "../../stores/TodoStore";
+import * as useInputValidation from "../../hooks/useInputValidation";
+import * as TodoFormView from "../../components/views/TodoFormView";
+
+jest.mock("../../stores/TodoStore");
+jest.mock("../../hooks/useInputValidation");
+jest.mock("../../components/views/TodoFormView");
+
+describe.only("<TodoForm />", () => {
+  const mockUseTodoStore = useTodoStore as jest.Mocked<typeof useTodoStore>;
+  const mockUseInputValidation = useInputValidation as jest.Mocked<
+    typeof useInputValidation
+  >;
+  const mockTodoFormView = TodoFormView as jest.Mocked<typeof TodoFormView>;
+
+  const validate = jest.fn();
+  const blur = jest.fn(),
+    save = jest.fn();
+
+  let rendered: RenderResult = {} as RenderResult;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+  });
+
+  beforeEach(() => {
+    mockTodoFormView.default.mockReturnValue(null);
+    mockUseInputValidation.default.mockReturnValue([
+      false,
+      validate,
+      null,
+      blur
+    ]);
+    mockUseTodoStore.default.mockImplementation(arg => {
+      if (arg.toString().includes("state.saveTodo")) return save;
+    });
+
+    jest.spyOn(console, "trace").mockImplementation(() => null);
+
+    rendered = render(<TodoForm />);
+  });
+
+  it("onInput is fires the proper functions with target.value length =< 3", () => {
+    const INPUT_VALUE = "abc";
+
+    const inputEvent: React.ChangeEvent<HTMLInputElement> = {} as React.ChangeEvent<
+      HTMLInputElement
+    >;
+    inputEvent.target = {} as EventTarget & HTMLInputElement;
+    inputEvent.target.value = INPUT_VALUE;
+    act(() => mockTodoFormView.default.mock.calls[0][0].onInput(inputEvent));
+    expect(validate).not.toBeCalled();
+
+    expect(mockTodoFormView.default).toBeCalledTimes(2);
+    expect(mockTodoFormView.default).toHaveBeenLastCalledWith(
+      expect.objectContaining({ title: INPUT_VALUE }),
+      {}
+    );
+
+    // no stack trace error message have been called
+    expect(console.trace).not.toHaveBeenCalled();
+  });
+});
+```
