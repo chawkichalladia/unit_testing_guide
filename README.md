@@ -20,20 +20,17 @@ export const fetchTodos = async (
 };
 ```
 
-### _a - mock external modules_
-
-To Test a service function or an API call, any module that is used to make a call
-to the server or to alter sent and received data should be mocked.
+To Test a service function or an API call, any module
+that is used to make a call to the server or to alter
+sent and received data should be mocked.
 
 ```typescript
 jest.mock("axios");
 jest.mock("../helpers/urlHelpers");
 ```
 
-### _b - adding the afterEach hook to clear the mocks_
-
-to avoid interference between different tests, mocks should be cleared
-after each one.
+to avoid interference between different tests, mocks
+should be cleared after each one.
 
 ```typescript
 describe("test todo service", () => {
@@ -43,9 +40,10 @@ describe("test todo service", () => {
 });
 ```
 
-### _c - writing the test_
+after the setup is complete, it's time to start writing
+our tests.
 
-First, for typescript the mocks should be typed:
+First, when using typescript the mocks should be typed:
 
 ```typescript
 // mock axios module
@@ -54,9 +52,10 @@ const MockAxios = axios as jest.Mocked<typeof axios>;
 const MockUrlHelpers = urlHelpers as jest.Mocked<typeof urlHelpers>;
 ```
 
-then, any arguments passed to the service function should be defined as well as
-any desired return value for the mock functions (if a passed argument is a
-function, then a jest mock function should be passed instead):
+then, any arguments passed to the service function should
+be defined as well as any desired return value for the
+mock functions (if a passed argument is a function, then
+a jest mock function should be passed instead):
 
 ```typescript
 const axiosResponse = { data: { data: [], total: 0 } };
@@ -64,15 +63,17 @@ const get = jest.fn(),
   set = jest.fn();
 ```
 
-after defining the potential arguments for the tested function and return values
-for the mocked modules, now time to mock the return values for each mocked value:
+after defining the potential arguments for the tested
+function and return values for the mocked modules, now
+time to mock the return values for each mocked value:
 
 ```typescript
 MockAxios.get.mockResolvedValueOnce(axiosResponse);
 MockUrlHelpers.todoURLWithFilterAndSort.mockReturnValueOnce("");
 ```
 
-after the setup is complete, we need to call the tested function to test its behavior:
+after the setup is complete, we need to call the tested
+function to test its behavior:
 
 ```typescript
 const res = await todoService.fetchTodos(set, get);
@@ -96,8 +97,9 @@ expect(MockFormatReturnedData.todoReturn).toHaveBeenLastCalledWith(
 );
 ```
 
-we test each mocked module is being called as expected by the tested module by
-testing the number of calls and passed arguments
+we test each mocked module is being called as expected by
+the tested module by testing the number of calls and
+passed arguments
 
 finally, the complete test will look like this:
 
@@ -163,7 +165,7 @@ describe("test todo service", () => {
 
 ## **2 - Testing Zustand store**
 
-the zustand store we are going to test:
+the `zustand` store we are going to test:
 
 ```typescript
 import create from "zustand";
@@ -183,7 +185,8 @@ const [useTodoStore] = create((set, get) => ({
 export default useTodoStore;
 ```
 
-the first 2 steps to test the store is the same as the ones used to test the service:
+the first 2 steps to test the store is the same as the
+ones used to test the service:
 
 - mocking the external modules
 
@@ -202,9 +205,10 @@ describe("test todo store", () => {
 });
 ```
 
-the difference between this test and the previous test is that in this case the
-store is a react hook, so we need to use the `@testing-library/react-hooks`
-testing library to do our tests.
+the difference between this test and the previous test is
+that in this case the store is a react hook, so we need
+to use the `@testing-library/react-hooks` testing library
+to do our tests.
 
 so our setup would look like this in the test file:
 
@@ -221,7 +225,8 @@ describe("test todo store", () => {
 });
 ```
 
-where cleanup is an API used to unmount any rendered hooks.
+where cleanup is an API used to unmount any rendered
+hooks.
 
 now to writing the test itself.
 
@@ -231,16 +236,17 @@ first step is to type the mocks:
 const MockTodoService = todoService as jest.Mocked<typeof todoService>;
 ```
 
-then we mock the returned value. to mock the value we use a helper function that
-returns data in the expected form from the service.
+then we mock the returned value. to mock the value we use
+a helper function that returns data in the expected form
+from the service.
 
 ```typescript
 const todos = generateTodos(5);
 MockTodoService.fetchTodos.mockResolvedValueOnce(todos);
 ```
 
-in here we generate 5 todos and provide the data as returned value from the
-mocked service function.
+in here we generate 5 todos and provide the data as
+returned value from the mocked service function.
 
 after establishing our mocked value, we render our hook:
 
@@ -260,11 +266,12 @@ then we call the action we want to test:
 await act(async () => await result.current.getTodos());
 ```
 
-the action we are calling is a state action, so we need to wrap our call in an
-act closure which will wait for those state changes before returning the result
-we need.
+the action we are calling is a state action, so we need
+to wrap our call in an act closure which will wait for
+those state changes before returning the result we need.
 
-after the action we want to test is called, we begin writing our assertions:
+after the action we want to test is called, we begin
+writing our assertions:
 
 ```typescript
 expect(todoService.fetchTodos).toHaveBeenCalledTimes(1);
@@ -277,14 +284,17 @@ expect(result.current.total).toBe(todos.total);
 expect(result.current.todos).toEqual(todos.todos);
 ```
 
-first, we start by asserting that the mocked service function has been called correctly,
-then we assert that the state values are what we expect them to be.
+first, we start by asserting that the mocked service
+function has been called correctly, then we assert that
+the state values are what we expect them to be.
 
-in this case, we are expecting that the service function will be called a single
-time, and will receive 2 functions are arguments.
+in this case, we are expecting that the service function
+will be called a single time, and will receive 2
+functions are arguments.
 
-on the other hand, we are expecting that the values saved to the store would match
-the values passed to the service mock.
+on the other hand, we are expecting that the values saved
+to the store would match the values passed to the service
+mock.
 
 at the end, this how the complete test would look like:
 
